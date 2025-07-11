@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+    <meta charset="UTF-8">
+    <title>NKC Email Signature Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            padding: 0 10px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            font-weight: bold;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+            background-color: #fdfdfd;
+        }
+
+        @media (max-width: 480px) {
+
+            input,
+            select,
+            button {
+                font-size: 14px;
+            }
+
+            #result {
+                font-size: 13px;
+            }
+        }
+
+        .copy-icon {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div style="text-align: center;">
+            <h2>Tạo chữ ký email cho NKCentral</h2>
+        </div>
+
+        <label>Chọn nhân sự</label>
+        <select id="staffSelect" onchange="autofill()"
+            style="width:100%; padding:6px; margin-bottom:12px; font-size:14px;">
+        </select>
+
+        <!-- Vẫn cần giữ lại để autofill hoạt động -->
+        <label>Họ tên</label>
+        <input id="name" type="text" placeholder="Nguyễn Văn A">
+
+        <label>Chức danh</label>
+        <input id="title" type="text" placeholder="ví dụ: NKCentral Group">
+
+        <label>Số điện thoại</label>
+        <input id="phone" type="text" placeholder="0334 123 456">
+
+        <label>Email công ty</label>
+        <input id="email" type="text" placeholder="ten@nkcmc.com.vn">
+
+        <label>Website</label>
+        <input id="website" type="text" placeholder="https://nkmc.com.vn">
+
+        <button onclick="generate()">Tạo chữ ký</button>
+
+        <div id="resultSection" style="display:none; margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <h3 style="margin: 0 0 10px 0;">Chữ ký đã được tạo thành công</h3>
+                <div>
+                    <button class="copy-icon" onclick="copySignature()">Sao chép</button>
+                    <span id="copyStatus" style="margin-left: 8px; font-weight: bold; color: green;"></span>
+                </div>
+            </div>
+            <div id="result" contenteditable="true" style="margin-top: 12px;"></div>
+        </div>
+
+        <script src="staffList.js"></script>
+
+        <script>
+            // Populate selectbox khi load trang
+            window.onload = function () {
+                const select = document.getElementById('staffSelect');
+                staffList.forEach((staff, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = staff.name;
+                    select.appendChild(option);
+                });
+
+                new Choices('#staffSelect', {
+                    placeholderValue: 'Chọn nhân sự',
+                    searchEnabled: true,
+                    itemSelectText: '',
+                });
+            };
+
+            function autofill() {
+                const index = +document.getElementById('staffSelect').value;
+                if (isNaN(index)) return;
+
+                const staff = staffList[index];
+                document.getElementById('name').value = staff.name ?? "";
+                document.getElementById('title').value = staff.title ?? "";
+                document.getElementById('phone').value = staff.phone ?? "";
+                document.getElementById('email').value = staff.email ?? "";
+                document.getElementById('website').value = staff.website ?? "";
+
+                //reset form ký
+                document.getElementById('resultSection').style.display = 'none';
+                document.getElementById('result').innerHTML = '';
+                document.getElementById('copyStatus').innerText = '';
+            }
+
+
+
+            function generate() {
+                const name = document.getElementById('name').value;
+                const title = document.getElementById('title').value;
+                const phone = document.getElementById('phone').value;
+                const email = document.getElementById('email').value;
+                const websiteRaw = document.getElementById('website').value;
+
+                const websiteList = websiteRaw.split(',').map(link => link.trim()).filter(link => link.length > 0);
+
+                // Tạo HTML <a> tag
+                const websiteHTML = websiteList.map(link => {
+                    const safeLink = link.startsWith('http://') || link.startsWith('https://') ? link : 'https://' + link;
+                    return `<a href="${safeLink}" target="_blank" style="color:#1a73e8; text-decoration:none;"> ${safeLink}</a>`;
+                }).join('<span style="margin: 0 4px;">/</span>');
+
+
+
+                const html = `
+<table cellpadding="0" cellspacing="0" border="0"
+    style="width:100%; max-width:600px; font-family:Arial, sans-serif; font-size:14px; color:#333; border-collapse:collapse;">
+  <tr>
+    <td align="center" valign="middle" style="padding-right:15px; width:100px;">
+      <img src="https://raw.githubusercontent.com/NKC-Company/logo-nkc-asset/refs/heads/main/psc-media.png"
+          alt="PSC Logo" style="max-width:100px; height:auto; display:block; pointer-events:none; user-select:none;">
+    </td>
+    <td valign="middle" style="border-left:1px solid #3d3d3d; padding-left:15px;">
+        <div style="font-size:17px; font-weight:bold; color:#646464;">${name}</div>
+        <div style="font-size:14px; color:#646464; margin-bottom:10px; margin-top:6px; font-weight:bold">${title}</div>
+
+        <div style="margin-bottom:6px;">
+            <img src="https://raw.githubusercontent.com/NKC-Company/logo-nkc-asset/refs/heads/main/phone.png"
+                 alt="Phone" style="height:14px; vertical-align:middle; margin-right:6px;">
+            <a href="tel:${phone}" style="color:#1a73e8; text-decoration:none;">${phone}</a>
+        </div>
+
+        <div style="margin-bottom:6px;">
+            <img src="https://raw.githubusercontent.com/NKC-Company/logo-nkc-asset/refs/heads/main/email.png"
+                 alt="Phone" style="height:14px; vertical-align:middle; margin-right:6px;">
+            <a href="mailto:${email}" style="color:#1a73e8; text-decoration:none;">${email}</a>
+        </div>
+
+
+        <div style="margin-bottom:6px; display: flex; align-items: center; flex-wrap: wrap;">
+            <img src="https://raw.githubusercontent.com/NKC-Company/logo-nkc-asset/main/web-icon.png"
+                alt="Website" style="height:14px; vertical-align:middle; margin-right:6px; flex-shrink:0;">
+            <div style="display:inline; word-break: break-all;margin-left:4px"> ${websiteHTML}</div>
+        </div>
+
+        <div>
+            <img src="https://raw.githubusercontent.com/NKC-Company/logo-nkc-asset/refs/heads/main/location.png"
+                 alt="Phone" style="height:14px; vertical-align:middle; margin-right:6px;">
+            <a href="https://maps.google.com/?q=No. 22, D7 Street, Saigon Pearl Villa Area, Thanh My Tay Ward, Binh Thanh District, Ho Chi Minh City" target="_blank" style="color:#1a73e8; text-decoration:none;">
+                No. 22, D7 Street, Saigon Pearl Villa Area, Thanh My Tay Ward, Binh Thanh District, Ho Chi Minh City
+            </a>
+        </div>
+
+    </td>
+  </tr>
+</table>`;
+
+                document.getElementById('result').innerHTML = html;
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('copyStatus').innerText = '';
+            }
+
+            function copySignature() {
+                const resultDiv = document.getElementById("result");
+
+                // Tạo range để chọn HTML đã render
+                const range = document.createRange();
+                range.selectNodeContents(resultDiv);
+
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+
+                try {
+                    const successful = document.execCommand("copy");
+                    if (successful) {
+                        document.getElementById("copyStatus").innerText = "Đã sao chép!";
+                    } else {
+                        document.getElementById("copyStatus").innerText = "Không thể sao chép.";
+                    }
+                } catch (err) {
+                    document.getElementById("copyStatus").innerText = "Lỗi sao chép.";
+                }
+
+                selection.removeAllRanges();
+            }
+        </script>
+    </div>
+</body>
+
+</html>
